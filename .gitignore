@@ -1,0 +1,74 @@
+# =========================
+# Node.js
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Environment variables (🔥 IMPORTANTE)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Build / dist
+# =========================
+dist/
+build/
+out/
+release/
+
+# Electron build
+*.exe
+*.msi
+*.deb
+*.AppImage
+*.dmg
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Coverage / tests
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# Cache
+# =========================
+.cache/
+tmp/
+temp/
+
+# =========================
+# Optional: logs do app
+# =========================
+*.sqlite
+*.db
+
+# =========================
+# Electron Forge / Builder
+# =========================
+.out/

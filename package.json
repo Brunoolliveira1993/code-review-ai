@@ -1,0 +1,17 @@
+{
+  "name": "code-review-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "electron": "^41.3.0",
+    "node-fetch": "^3.3.2"
+  }
+}

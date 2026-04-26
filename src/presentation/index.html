@@ -1,0 +1,203 @@
+<!-- src/presentation/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Review AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Code Review AI</h2>
+
+        <input id="url" placeholder="URL do commit ou MR" />
+        <button onclick="analyze()">Analisar</button>
+
+        
+        <div class="filters">
+            Severidade:
+                <select id="filterSeverity">
+                    <option value="ALL">Todas</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                </select>
+
+            Tipo:
+                <select id="filterType">
+                    <option value="ALL">Todos</option>
+                    <option value="BUG">BUG</option>
+                    <option value="PERFORMANCE">PERFORMANCE</option>
+                    <option value="SECURITY">SECURITY</option>
+                    <option value="STYLE">STYLE</option>
+                </select>
+        </div>
+
+
+        <div id="status"></div>
+
+        <pre id="result"></pre>
+
+        <script> 
+            
+            document.getElementById("filterSeverity").addEventListener("change", () => {
+                if (lastResult) renderResult(lastResult);
+            });
+
+            document.getElementById("filterType").addEventListener("change", () => {
+                if (lastResult) renderResult(lastResult);
+            });
+
+            
+            async function analyze() {
+                console.log("Função analyze() chamada");
+
+                const url = document.getElementById('url').value; 
+                const status = document.getElementById('status');
+                const resultEl = document.getElementById('result');
+
+                console.log("Iniciando análise para URL:", url);
+
+                resultEl.innerText = "";
+                status.innerText = "🔍 Coletando alterações...";
+
+                try {
+                    console.log("Enviando solicitação de análise para o backend...");
+
+                    status.innerHTML = "⏳ Analisando código...";
+
+                    const result = await window.api.analyzeCode({
+                        url,
+                        type: "merge",
+                        model: "gpt"
+                    });
+
+                    console.log("Análise concluída, resultado recebido:", result);
+
+                    status.innerText = "✅ Análise concluída";
+
+                    renderResult(result);
+
+                } catch (err) {
+                    status.innerText = "❌ Erro na análise";
+                    console.error("Erro capturado:", err);
+                }
+            }
+
+            function formatSuggestion(s) {
+                return `💡 ${s.message} (${s.file}:${s.line ?? '-'})`;
+            }
+
+            function groupByFile(result) {
+                const map = {};
+
+                (result.issues || []).forEach(issue => {
+                    if (!map[issue.file]) {
+                        map[issue.file] = { issues: [], suggestions: [] };
+                    }
+                    map[issue.file].issues.push(issue);
+                });
+
+                (result.suggestions || []).forEach(s => {
+                    if (!map[s.file]) {
+                        map[s.file] = { issues: [], suggestions: [] };
+                    }
+                    map[s.file].suggestions.push(s);
+                });
+
+                return map;
+            }
+
+            let lastResult = null;
+
+            function renderResult(result) {
+                lastResult = result;
+
+                const container = document.getElementById('result');
+                container.innerHTML = "";
+
+                const severityFilter = document.getElementById('filterSeverity').value;
+                const typeFilter = document.getElementById('filterType').value;
+
+                const grouped = groupByFile(result);
+
+                Object.keys(grouped).forEach(file => {
+
+                    const card = document.createElement("div");
+                    card.className = "card";
+
+                    const content = document.createElement("div");
+                    content.className = "card-content";
+
+                    const data = grouped[file];
+
+                    const title = document.createElement("div");
+                    title.className = "card-title";
+                    title.innerHTML = `
+                    <span class="file-name">📄 ${file}</span>
+                    <span class="file-meta">
+                        ${data.issues.length} problemas • ${data.suggestions.length} sugestões
+                    </span>
+                `;
+
+                    title.addEventListener("click", () => {
+                        content.classList.toggle("hidden");
+                    });
+
+                    card.appendChild(title);
+                    card.appendChild(content);
+
+                    // HEADER ISSUES
+                    const issueHeader = document.createElement("div");
+                    issueHeader.innerText = "🚨 Problemas";
+                    issueHeader.className = "section-title";
+                    content.appendChild(issueHeader);
+
+                    // Issues
+                    data.issues
+                        .filter(i =>
+                            (severityFilter === "ALL" || i.severity === severityFilter) &&
+                            (typeFilter === "ALL" || i.type === typeFilter)
+                        )
+                        .forEach(i => {
+
+                            const item = document.createElement("div");
+                            item.className = `issue ${i.severity}`;
+
+                            item.innerHTML = `
+                                <span class="badge ${i.severity}">${i.severity}</span>
+                                <span class="type">${i.type}</span>
+                                <span class="message">${i.message}</span>
+                                <span class="meta">(${i.file}:${i.line ?? '-'})</span>
+                            `;
+
+                            content.appendChild(item); 
+                        });
+
+                    // HEADER SUGGESTIONS
+                    const suggestionHeader = document.createElement("div");
+                    suggestionHeader.innerText = "💡 Sugestões";
+                    suggestionHeader.className = "section-title";
+                    content.appendChild(suggestionHeader);
+
+                    data.suggestions.forEach(s => {
+                        const item = document.createElement("div");
+                        item.className = "suggestion";
+                        item.innerText = formatSuggestion(s);
+
+                        content.appendChild(item); // ✅ corrigido
+                    });
+
+                    if (content.children.length > 2) {
+                        container.appendChild(card);
+                    }
+                });
+            }
+        
+            window.api.onProgress((message) => {
+                document.getElementById('status').innerText = message;
+            });
+        
+        </script>
+    </div>
+</body>
+</html>
