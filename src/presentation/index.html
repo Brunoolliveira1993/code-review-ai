@@ -10,7 +10,9 @@
         <h2>Code Review AI</h2>
 
         <input id="url" placeholder="URL do commit ou MR" />
-        <button onclick="analyze()">Analisar</button>
+
+        <button id="btnAnalyzeCode">Analisar</button>
+        <button id="btnConfig">⚙️ Configurações</button>
 
         
         <div class="filters">
@@ -38,6 +40,14 @@
         <pre id="result"></pre>
 
         <script> 
+
+            document.getElementById("btnAnalyzeCode").addEventListener("click", () => {
+                analyze();
+            });
+
+            document.getElementById("btnConfig").addEventListener("click", () => {
+                window.api.openConfig();
+            });
             
             document.getElementById("filterSeverity").addEventListener("change", () => {
                 if (lastResult) renderResult(lastResult);

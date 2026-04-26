@@ -12,6 +12,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "electron": "^41.3.0",
+    "keytar": "^7.9.0",
     "node-fetch": "^3.3.2"
   }
 }

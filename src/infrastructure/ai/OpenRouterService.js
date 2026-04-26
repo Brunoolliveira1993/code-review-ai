@@ -1,4 +1,5 @@
 require('dotenv').config();
+const credentialService = require('../security/CredentialService');
 
 class OpenRouterService {
 
@@ -9,7 +10,7 @@ class OpenRouterService {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Authorization": `Bearer ${await credentialService.get('OPENROUTER_API_KEY')}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configurações</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="container">
+
+    <h2>⚙️ Configurações</h2>
+
+    <div>
+        <label>OpenRouter API Key</label><br/>
+        <input id="openrouter" />
+    </div>
+
+    <div>
+        <label>GitHub Token</label><br/>
+        <input id="github" />
+    </div>
+
+    <div>
+        <label>GitLab Token</label><br/>
+        <input id="gitlab" />
+    </div>
+
+    <br/>
+
+    <button onclick="save()">Salvar</button>
+
+    <script>
+        async function load() {
+            const data = await window.config.load();
+
+            document.getElementById('openrouter').value = data.openrouter || '';
+            document.getElementById('github').value = data.github || '';
+            document.getElementById('gitlab').value = data.gitlab || '';
+        }
+
+        async function save() {
+            await window.config.save({
+                openrouter: document.getElementById('openrouter').value,
+                github: document.getElementById('github').value,
+                gitlab: document.getElementById('gitlab').value
+            });
+
+            alert("Salvo com segurança 🔐");
+        }
+
+        load();
+    </script>
+
+</body>
+</html>
