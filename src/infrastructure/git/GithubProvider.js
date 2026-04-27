@@ -3,10 +3,25 @@ const credentialService = require('../security/CredentialService');
 
 class GithubProvider extends GitProvider {
     async getDiff(url) {
-    // Exemplo:
-    // https://github.com/user/repo/pull/123
-
         const token = await credentialService.get('GITHUB_TOKEN');
+
+        let apiUrl;
+
+        // PR
+        let prMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+
+        // Commit
+        let commitMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/commit\/([a-f0-9]+)/);
+
+        if (prMatch) {
+            const [, owner, repo, prNumber] = prMatch;
+            apiUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
+        } else if (commitMatch) {
+            const [, owner, repo, sha] = commitMatch;
+            apiUrl = `https://api.github.com/repos/${owner}/${repo}/commits/${sha}`;
+        } else {
+            throw new Error('URL inválida do GitHub');
+        }
 
         const headers = {
             'Accept': 'application/vnd.github.v3.diff'
@@ -16,14 +31,17 @@ class GithubProvider extends GitProvider {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const diffUrl = url + ".diff";
+        const response = await fetch(apiUrl, { headers });
 
-        const response =  await fetch(diffUrl, { headers });
-        const diff = await response.text();
+        console.log(`GitHub API response status: ${response.status} for URL: ${apiUrl}`);
 
-        return diff;
+        if (!response.ok) {
+            const body = await response.text();
+            throw new Error(`Erro ao obter diff (${response.status}): ${body}`);
+        }
+
+        return await response.text();
     }
-    
 }
 
 module.exports = GithubProvider;

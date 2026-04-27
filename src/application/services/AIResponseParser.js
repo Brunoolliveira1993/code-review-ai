@@ -19,12 +19,14 @@ class AIResponseParser {
             type: i.type || "STYLE",
             message: i.message || "Sem descrição",
             file: i.file || "desconhecido",
-            line: i.line ?? null
+            line: i.line ?? null,
+            language: i.language || "unknown"
         })),
         suggestions: (data.suggestions || []).map(s => ({
             message: s.message || "Sem descrição",
             file: s.file || "desconhecido",
-            line: s.line ?? null
+            line: s.line ?? null,
+            category: s.category || "OPTIMIZATION"
         }))
         };
     }

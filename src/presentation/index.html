@@ -10,10 +10,18 @@
         <h2>Code Review AI</h2>
 
         <input id="url" placeholder="URL do commit ou MR" />
-
         <button id="btnAnalyzeCode">Analisar</button>
         <button id="btnConfig">⚙️ Configurações</button>
 
+        <div class="language-selector">
+            <label for="languageSelect">Linguagem:</label>
+            <select id="languageSelect">
+                <option value="javascript">📘 JavaScript</option>
+                <option value="java">☕ Java</option>
+                <option value="cpp">⚙️ C++</option>
+                <option value="powerbuilder">🏗️ PowerBuilder</option>
+            </select>
+        </div>
         
         <div class="filters">
             Severidade:
@@ -59,29 +67,38 @@
 
             
             async function analyze() {
-                console.log("Função analyze() chamada");
-
-                const url = document.getElementById('url').value; 
+                const url = document.getElementById('url').value.trim(); 
+                const language = document.getElementById('languageSelect').value;
                 const status = document.getElementById('status');
                 const resultEl = document.getElementById('result');
 
-                console.log("Iniciando análise para URL:", url);
-
                 resultEl.innerText = "";
+
+                // Validar URL antes de enviar
+                try {
+                    new URL(url);
+                } catch {
+                    status.innerText = "❌ URL inválida. Digite a URL completa (https://...)";
+                    return;
+                }
+
+                // Validar se é GitHub ou GitLab
+                if (!url.includes('github.com') && !url.includes('gitlab.com')) {
+                    status.innerText = "❌ Apenas GitHub e GitLab são suportados";
+                    return;
+                }
+
                 status.innerText = "🔍 Coletando alterações...";
 
                 try {
-                    console.log("Enviando solicitação de análise para o backend...");
-
                     status.innerHTML = "⏳ Analisando código...";
 
                     const result = await window.api.analyzeCode({
                         url,
+                        language,
                         type: "merge",
                         model: "gpt"
                     });
-
-                    console.log("Análise concluída, resultado recebido:", result);
 
                     status.innerText = "✅ Análise concluída";
 
@@ -89,7 +106,7 @@
 
                 } catch (err) {
                     status.innerText = "❌ Erro na análise";
-                    console.error("Erro capturado:", err);
+                    console.error("Erro na análise:", err.message);
                 }
             }
 
@@ -142,12 +159,18 @@
 
                     const title = document.createElement("div");
                     title.className = "card-title";
-                    title.innerHTML = `
-                    <span class="file-name">📄 ${file}</span>
-                    <span class="file-meta">
-                        ${data.issues.length} problemas • ${data.suggestions.length} sugestões
-                    </span>
-                `;
+                    
+                    // Criar título de forma segura para evitar XSS
+                    const fileName = document.createElement("span");
+                    fileName.className = "file-name";
+                    fileName.textContent = "📄 " + file;
+                    
+                    const fileMeta = document.createElement("span");
+                    fileMeta.className = "file-meta";
+                    fileMeta.textContent = data.issues.length + " problemas • " + data.suggestions.length + " sugestões";
+                    
+                    title.appendChild(fileName);
+                    title.appendChild(fileMeta);
 
                     title.addEventListener("click", () => {
                         content.classList.toggle("hidden");
@@ -173,12 +196,27 @@
                             const item = document.createElement("div");
                             item.className = `issue ${i.severity}`;
 
-                            item.innerHTML = `
-                                <span class="badge ${i.severity}">${i.severity}</span>
-                                <span class="type">${i.type}</span>
-                                <span class="message">${i.message}</span>
-                                <span class="meta">(${i.file}:${i.line ?? '-'})</span>
-                            `;
+                            // Criar elementos de forma segura para evitar XSS
+                            const badge = document.createElement("span");
+                            badge.className = `badge ${i.severity}`;
+                            badge.textContent = i.severity;
+
+                            const type = document.createElement("span");
+                            type.className = "type";
+                            type.textContent = i.type;
+
+                            const message = document.createElement("span");
+                            message.className = "message";
+                            message.textContent = i.message;
+
+                            const meta = document.createElement("span");
+                            meta.className = "meta";
+                            meta.textContent = `(${i.file}:${i.line ?? '-'})`;
+
+                            item.appendChild(badge);
+                            item.appendChild(type);
+                            item.appendChild(message);
+                            item.appendChild(meta);
 
                             content.appendChild(item); 
                         });

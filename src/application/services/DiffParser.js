@@ -15,7 +15,9 @@ class DiffParser {
             files.push(currentFile);
             }
 
-            const fileName = line.split(' ')[2].replace('a/', '');
+            // Extrai o caminho corretamente: "diff --git a/path b/path"
+            const match = line.match(/^diff --git a\/(.+?) b\/.+/);
+            const fileName = match ? match[1] : 'unknown';
 
             currentFile = new CodeChange({
             file: fileName,
@@ -24,14 +26,18 @@ class DiffParser {
             });
         }
 
-        // Linhas adicionadas
+        // Linhas adicionadas (proteger contra null reference)
         else if (line.startsWith('+') && !line.startsWith('+++')) {
-            currentFile?.additions.push(line.substring(1));
+            if (currentFile) {
+                currentFile.additions.push(line.substring(1));
+            }
         }
 
-        // Linhas removidas
+        // Linhas removidas (proteger contra null reference)
         else if (line.startsWith('-') && !line.startsWith('---')) {
-            currentFile?.deletions.push(line.substring(1));
+            if (currentFile) {
+                currentFile.deletions.push(line.substring(1));
+            }
         }
         }
 

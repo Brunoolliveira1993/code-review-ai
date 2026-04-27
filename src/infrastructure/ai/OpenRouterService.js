@@ -1,82 +1,109 @@
 require('dotenv').config();
 const credentialService = require('../security/CredentialService');
+const languagePrompts = require('../../application/config/LanguagePrompts.json');
 
 class OpenRouterService {
 
-    async analyzeCode(changes) {
+    async analyzeCode(changes, language = 'javascript') {
 
-        const prompt = this.buildPrompt(changes);
+        const prompt = this.buildPrompt(changes, language);
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${await credentialService.get('OPENROUTER_API_KEY')}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-oss-120b:free", // pode trocar depois
-            messages: [
-            {
-                role: "system",
-                content: "Você é um revisor de código senior."
+        // Implementar timeout de 30 segundos
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${await credentialService.get('OPENROUTER_API_KEY')}`,
+                "Content-Type": "application/json"
             },
-            {
-                role: "user",
-                content: prompt
+            body: JSON.stringify({
+                model: "openai/gpt-oss-120b:free",
+                messages: [
+                {
+                    role: "system",
+                    content: "Você é um revisor de código sênior especializado."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+                ]
+            }),
+            signal: controller.signal
+            });
+
+            // Validar status HTTP antes de fazer parse
+            if (!response.ok) {
+                throw new Error(`Erro API OpenRouter (${response.status}): ${response.statusText}`);
             }
-            ]
-        })
-        });
 
-        const data = await response.json();
-
-        return data.choices?.[0]?.message?.content || "Sem resposta da IA";
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || "Sem resposta da IA";
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
-    buildPrompt(changes) {
+    buildPrompt(changes, language = 'javascript') {
+    // Obter configuração da linguagem
+    const langConfig = languagePrompts.languages.find(l => l.id === language) || languagePrompts.languages[0];
+    const template = languagePrompts.analysisTemplate;
+    
+    const systemMessage = langConfig.analysisPrompt.system;
+    const contextInstructions = langConfig.analysisPrompt.contextInstructions;
+    const documentation = langConfig.analysisPrompt.documentation;
+    
     return `
-    Você é um revisor de código sênior.
+${systemMessage}
 
-    Analise as alterações e retorne APENAS JSON válido.
+${contextInstructions}
 
-    REGRAS:
-    - Responda em português do Brasil
-    - NÃO use markdown
-    - NÃO escreva texto fora do JSON
+Analise as alterações e retorne APENAS JSON válido.
 
-    Formato obrigatório:
+REGRAS:
+- Responda em português do Brasil
+- NÃO use markdown
+- NÃO escreva texto fora do JSON
+- Análise focada em ${langConfig.name}
 
+REFERÊNCIAS TÉCNICAS:
+${langConfig.sources.map(s => `- ${s}`).join('\n')}
+
+${documentation}
+
+FORMATO OBRIGATÓRIO (JSON):
+
+{
+  "issues": [
     {
-    "issues": [
-        {
-        "severity": "LOW | MEDIUM | HIGH",
-        "type": "BUG | PERFORMANCE | SECURITY | STYLE",
-        "message": "descrição clara",
-        "file": "nome do arquivo",
-        "line": número ou null
-        }
-    ],
-    "suggestions": [
-        {
-        "message": "descrição clara",
-        "file": "nome do arquivo",
-        "line": número ou null
-        }
-    ]
+      "severity": "LOW | MEDIUM | HIGH",
+      "type": "BUG | PERFORMANCE | SECURITY | STYLE | ARCHITECTURE",
+      "message": "descrição clara e acionável",
+      "file": "nome do arquivo",
+      "line": número ou null,
+      "language": "${language}"
     }
+  ],
+  "suggestions": [
+    {
+      "message": "descrição clara",
+      "file": "nome do arquivo",
+      "line": número ou null,
+      "category": "OPTIMIZATION | REFACTORING | MODERNIZATION"
+    }
+  ]
+}
 
-    REGRAS IMPORTANTES:
-    - severity HIGH = erro crítico ou bug
-    - MEDIUM = melhoria importante
-    - LOW = melhoria leve
-    - type:
-    - BUG → erro funcional
-    - PERFORMANCE → performance
-    - SECURITY → vulnerabilidade
-    - STYLE → código/organização
+DIRETRIZES DE SEVERIDADE:
+- HIGH: Erro crítico, bug, ou vulnerabilidade que afeta produção
+- MEDIUM: Melhoria importante em performance, manutenibilidade ou segurança
+- LOW: Melhoria leve ou sugestão de estilo
 
-    Código:
-    ${JSON.stringify(changes, null, 2)}
+Código a analisar:
+${JSON.stringify(changes, null, 2)}
     `;
     }
 }
