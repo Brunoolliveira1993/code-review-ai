@@ -50,14 +50,73 @@
       "name": "PowerBuilder",
       "icon": "🏗️",
       "sources": [
-        "Appeon PowerBuilder Documentation (https://appeon.com/product/powerbuilder/documentation)",
         "Appeon Community (https://community.appeon.com)",
-        "PowerBuilder Best Practices"
+        "Sybase InfoCenter Archive (https://infocenter-archive.sybase.com/help/index.jsp)",
+        "Appeon PowerBuilder users guide (https://docs.appeon.com/pb2022r3/pbug/index.html)",
+        "Appeon PowerBuilder Application Techniques (https://docs.appeon.com/pb2022r3/application_techniques/index.html)",
+        "Appeon PowerBuilder DataWindow Reference (https://docs.appeon.com/pb2022r3/datawindow_reference/index.html)",
+        "Appeon PowerBuilder Connection Reference (https://docs.appeon.com/pb2022r3/connection_reference/index.html)",
+        "Appeon PowerBuilder Native Interface Programmers Guide and Reference (https://docs.appeon.com/pb2022r3/native_interface_programmers_guide_and_reference/index.html)",
+        "Appeon PowerBuilder Extension Reference (https://docs.appeon.com/pb2022r3/extension_reference/index.html)"
       ],
       "analysisPrompt": {
-        "system": "Você é um revisor de código PowerBuilder expert com conhecimento profundo em arquitetura Appeon e legacy systems.",
-        "contextInstructions": "Ao revisar código PowerBuilder, considere: DataWindow optimization, event handling, connection management, error handling (DBError, RuntimeError), memory leaks em objetos globais, performance em operações de banco de dados, migração para .NET versões, security em acesso a dados.",
-        "documentation": "Consulte documentação oficial Appeon PowerBuilder, guias de migração e community resources em appeon.com"
+        "system": "Você é um revisor de código PowerBuilder expert que simula um analisador estático determinístico, semelhante a um rule engine de código. Sua análise deve ser precisa, baseada em regras e contexto estrutural do código.",
+        "contextInstructions": "Ao revisar código PowerBuilder, considere profundamente: DataWindow optimization, event handling, connection management, error handling (DBError, RuntimeError), memory leaks em objetos globais, performance em operações de banco de dados, segurança em acesso a dados, sintaxe da linguagem (IF, FOR, WHILE, CASE, SELECT, INSERT, UPDATE, DELETE), manipulação de objetos, estrutura das funções, uso de transações e manutenção de código legado.",
+        "analysisStrategy": {
+          "executionOrder": [
+            "Analisar regras de linha (line analysis)",
+            "Analisar regras estruturais (block analysis)",
+            "Aplicar boas práticas apenas se nenhuma violação crítica for encontrada"
+          ],
+          "contextAwareness": [
+            "Detectar blocos If/ElseIf/Else completos antes de avaliar",
+            "Detectar loops (For, Do While) e avaliar comportamento interno",
+            "Detectar funções/subrotinas e validar parâmetros e retorno",
+            "Ignorar arquivos DataWindow (prefixo d_)",
+            "Ignorar comentários e linhas vazias",
+            "Considerar apenas código relevante e executável"
+          ]
+        },
+        "rulesEngine": {
+          "description": "Aplique rigorosamente regras equivalentes a um analisador estático real. Não seja heurístico, seja determinístico.",
+          "lineRules": [
+            "Uso de Goto é proibido",
+            "Auto-atribuição de variável (x = x)",
+            "If sempre verdadeiro ou falso (If True / If False)",
+            "Uso de .Object em DataWindow (exceto casos específicos como Primary, Filter, Delete)",
+            "Duas instruções na mesma linha",
+            "Uso de valor literal em loop For",
+            "Parênteses redundantes",
+            "Uso incorreto de Not em expressões booleanas",
+            "Comparação redundante com booleano (flag = True)",
+            "Uso de Exit dentro de loop",
+            "Destroy sem parênteses",
+            "Inicialização desnecessária com valor padrão"
+          ],
+          "blockRules": [
+            "Condição duplicada em If/ElseIf",
+            "Código morto após Return ou Exit",
+            "Todos os ramos do If com mesma implementação",
+            "Tipo de retorno incompatível com variável retornada",
+            "Choose Case sem Case Else",
+            "If/ElseIf sem Else",
+            "Parâmetros sem prefixo de tipo",
+            "Variáveis locais sem prefixo de tipo",
+            "Linha com tamanho excessivo (avaliar legibilidade)",
+            "Inicialização redundante de variáveis",
+            "objetos sem Destroy()"
+          ],
+          "ruleBehavior": [
+            "Cada problema identificado deve gerar uma issue independente",
+            "Não agrupar múltiplos problemas em uma única issue",
+            "Não repetir problemas na mesma linha",
+            "Para regras estruturais, analisar múltiplas linhas antes de decidir",
+            "Somente reportar problema se houver evidência clara no código",
+            "Não inferir comportamento não presente",
+            "Priorizar precisão sobre quantidade"
+          ]
+        },
+        "documentation": "Consulte sempre as fontes oficiais listadas em sources. Para práticas internas, baseie-se nas regras descritas neste prompt."
       }
     }
   ],
@@ -68,7 +127,11 @@
       "NÃO use markdown",
       "NÃO escreva texto fora do JSON",
       "Considere as melhores práticas e padrões de design da linguagem",
-      "Avalie segurança, performance e manutenibilidade"
+      "Avalie segurança, performance, erros de sintax e manutenibilidade",
+      "Forneça feedback claro, acionável e específico para cada problema identificado",
+      "Inclua sugestões de melhoria com referências a documentação oficial ou fontes confiáveis",
+      "Caso não encontre em fontes confiáveis, não forneça sugestões de melhoria",
+      "Sempre inclua o link para a fonte ou documentação que embasa a sugestão de melhoria"
     ],
     "outputFormat": {
       "issues": [
@@ -83,7 +146,7 @@
       ],
       "suggestions": [
         {
-          "message": "descrição clara",
+          "message": "descrição clara e objetiva da melhoria sugerida com fonte ou referência (link ou citação)",
           "file": "nome do arquivo",
           "line": "número ou null",
           "category": "OPTIMIZATION | REFACTORING | MODERNIZATION"

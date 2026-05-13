@@ -83,7 +83,7 @@
                 }
 
                 // Validar se é GitHub ou GitLab
-                if (!url.includes('github.com') && !url.includes('gitlab.com')) {
+                if (!url.includes('github.com') && !url.includes('gitlab.com')&& !url.includes('gitlab.ciss.com')) {
                     status.innerText = "❌ Apenas GitHub e GitLab são suportados";
                     return;
                 }

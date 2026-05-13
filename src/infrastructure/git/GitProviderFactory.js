@@ -1,5 +1,6 @@
 const GithubProvider = require('./GithubProvider');
 const GitlabProvider = require('./GitlabProvider');
+const GitlabCISSProvider = require('./GitlabCISSProvider');
 
 class GitProviderFactory {
     static create(url) {
@@ -14,6 +15,10 @@ class GitProviderFactory {
         
         if (hostname.endsWith('gitlab.com')) {
             return new GitlabProvider();
+        }
+        
+        if (hostname === 'gitlab.ciss.com.br') {
+            return new GitlabCISSProvider();
         }
         
         throw new Error("Provedor Git não suportado");

@@ -1,3 +1,4 @@
+const credentialService = require('../../infrastructure/security/CredentialService');
 const ReviewResult = require('../../domain/models/ReviewResult');
 const GitProviderFactory = require('../../infrastructure/git/GitProviderFactory');
 const DiffParser = require('../services/DiffParser');

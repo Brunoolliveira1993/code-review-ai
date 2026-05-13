@@ -6,105 +6,95 @@ class OpenRouterService {
 
     async analyzeCode(changes, language = 'javascript') {
 
-        const prompt = this.buildPrompt(changes, language);
+        const { systemPrompt, userPrompt } = this.buildPrompt(changes, language);
 
-        // Implementar timeout de 30 segundos
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
+        console.log("prompts:", { systemPrompt, userPrompt });
         try {
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${await credentialService.get('OPENROUTER_API_KEY')}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "openai/gpt-oss-120b:free",
-                messages: [
-                {
-                    role: "system",
-                    content: "Você é um revisor de código sênior especializado."
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${await credentialService.get('OPENROUTER_API_KEY')}`,
+                    "Content-Type": "application/json"
                 },
-                {
-                    role: "user",
-                    content: prompt
-                }
-                ]
-            }),
-            signal: controller.signal
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-120b:free",
+                    temperature: 0.1, 
+                    messages: [
+                        {
+                            role: "system",
+                            content: systemPrompt
+                        },
+                        {
+                            role: "user",
+                            content: userPrompt
+                        }
+                    ]
+                }),
+                signal: controller.signal
             });
 
-            // Validar status HTTP antes de fazer parse
             if (!response.ok) {
                 throw new Error(`Erro API OpenRouter (${response.status}): ${response.statusText}`);
             }
 
             const data = await response.json();
             return data.choices?.[0]?.message?.content || "Sem resposta da IA";
+
         } finally {
             clearTimeout(timeoutId);
         }
     }
 
     buildPrompt(changes, language = 'javascript') {
-    // Obter configuração da linguagem
-    const langConfig = languagePrompts.languages.find(l => l.id === language) || languagePrompts.languages[0];
-    const template = languagePrompts.analysisTemplate;
-    
-    const systemMessage = langConfig.analysisPrompt.system;
-    const contextInstructions = langConfig.analysisPrompt.contextInstructions;
-    const documentation = langConfig.analysisPrompt.documentation;
-    
-    return `
-${systemMessage}
 
-${contextInstructions}
+        const langConfig = languagePrompts.languages.find(l => l.id === language)
+            || languagePrompts.languages[0];
 
-Analise as alterações e retorne APENAS JSON válido.
+        const template = languagePrompts.analysisTemplate;
 
-REGRAS:
-- Responda em português do Brasil
-- NÃO use markdown
-- NÃO escreva texto fora do JSON
-- Análise focada em ${langConfig.name}
+        // 🔥 SYSTEM = inteligência
+        const systemPrompt = `
+${template.instructions.replace('{LANGUAGE}', langConfig.name)}
 
-REFERÊNCIAS TÉCNICAS:
-${langConfig.sources.map(s => `- ${s}`).join('\n')}
+${langConfig.analysisPrompt.system}
 
-${documentation}
+${langConfig.analysisPrompt.contextInstructions}
 
-FORMATO OBRIGATÓRIO (JSON):
+${langConfig.analysisPrompt.analysisStrategy 
+    ? JSON.stringify(langConfig.analysisPrompt.analysisStrategy, null, 2) 
+    : ''}
 
-{
-  "issues": [
-    {
-      "severity": "LOW | MEDIUM | HIGH",
-      "type": "BUG | PERFORMANCE | SECURITY | STYLE | ARCHITECTURE",
-      "message": "descrição clara e acionável",
-      "file": "nome do arquivo",
-      "line": número ou null,
-      "language": "${language}"
-    }
-  ],
-  "suggestions": [
-    {
-      "message": "descrição clara",
-      "file": "nome do arquivo",
-      "line": número ou null,
-      "category": "OPTIMIZATION | REFACTORING | MODERNIZATION"
-    }
-  ]
-}
+${langConfig.analysisPrompt.rulesEngine 
+    ? JSON.stringify(langConfig.analysisPrompt.rulesEngine, null, 2) 
+    : ''}
+
+REGRAS OBRIGATÓRIAS:
+${template.rules.join('\n')}
+
+FORMATO DE RESPOSTA (OBRIGATÓRIO JSON):
+${JSON.stringify(template.outputFormat, null, 2)}
 
 DIRETRIZES DE SEVERIDADE:
-- HIGH: Erro crítico, bug, ou vulnerabilidade que afeta produção
-- MEDIUM: Melhoria importante em performance, manutenibilidade ou segurança
-- LOW: Melhoria leve ou sugestão de estilo
+${JSON.stringify(template.severityGuidelines, null, 2)}
 
-Código a analisar:
+IMPORTANTE:
+- Não escreva nada fora do JSON
+- Não use markdown
+- Não invente dados
+- Seja determinístico
+`;
+
+        // 🔥 USER = apenas código
+        const userPrompt = `
+Analise o código abaixo:
+
 ${JSON.stringify(changes, null, 2)}
-    `;
+`;
+
+        return { systemPrompt, userPrompt };
     }
 }
 
