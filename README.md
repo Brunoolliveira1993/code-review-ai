@@ -1,57 +1,75 @@
 # 🚀 Code Review AI
 
-Aplicação desktop (Electron + Node.js) para análise automática de código usando IA.
+Aplicação desktop baseada em Electron para análise automática de código usando IA.
 
-Permite analisar:
-- Pull Requests (GitHub)
-- Merge Requests (GitLab)
+## O que ela faz
 
-A aplicação coleta o diff, envia para IA e retorna:
-- Problemas encontrados
-- Sugestões
-- Severidade (HIGH, MEDIUM, LOW)
-- Tipo (BUG, PERFORMANCE, etc)
+- Analisa Pull Requests do GitHub
+- Analisa Merge Requests do GitLab e GitLab CISS
+- Coleta o diff do PR/MR ou commit
+- Envia o código para IA via OpenRouter
+- Exibe problemas encontrados e sugestões
+- Mostra severidade (`HIGH`, `MEDIUM`, `LOW`) e tipo (`BUG`, `PERFORMANCE`, `SECURITY`, `STYLE`, `ARCHITECTURE`)
+- Permite postar comentários diretamente no merge request/pull request
 
----
+## Principais funcionalidades
 
-## 🧠 Tecnologias
+- Análise de código automática a partir da URL do PR/MR
+- Interface desktopleve para configurar chaves de API
+- Comentários gerados automaticamente enviados para o GitHub ou GitLab
+- Armazenamento seguro das credenciais usando o keytar
 
-- Node.js
+## Tecnologias
+
 - Electron
-- OpenRouter (IA)
-- HTML + CSS
+- Node.js
+- TypeScript
+- OpenRouter
+- Zod
+- Keytar
 
----
+## Pré-requisitos
 
-## � Instalação e Execução
+- Node.js 18 ou superior
+- npm
 
-### Pré-requisitos
+## Como iniciar
 
-- Node.js (versão 14 ou superior) - [Download aqui](https://nodejs.org/)
+1. Clone o repositório ou baixe o ZIP:
+   ```bash
+   git clone <url-do-repositorio>
+   cd code-review-ai
+   ```
 
-### Passos para Executar o Projeto
-
-1. **Clone ou baixe o repositório:**
-   - Clone: `git clone <url-do-repositorio>`
-   - Ou baixe o ZIP e extraia.
-
-2. **Instale as dependências:**
+2. Instale as dependências:
    ```bash
    npm install
    ```
 
-3. **Configure o ambiente (opcional):**
-   - Copie o arquivo `.env.example` para `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   - Edite `.env` se necessário (as chaves de API são configuradas via interface da aplicação).
-
-4. **Execute o projeto:**
+3. Execute a aplicação:
    ```bash
    npm start
    ```
 
-A aplicação desktop será aberta. Configure as chaves de API nas configurações da aplicação.
+O comando `npm start` executa `npm run build` e em seguida inicia o Electron.
 
----
+## Scripts úteis
+
+- `npm install` — instala dependências
+- `npm run build` — compila o TypeScript e copia os arquivos de interface para `dist/presentation`
+- `npm start` — compila e abre o app Electron
+
+## Configuração de credenciais
+
+Após abrir o app, clique em **Configurações** e informe:
+
+- `OPENROUTER_API_KEY`
+- `GITHUB_TOKEN`
+- `GITLAB_TOKEN`
+
+As credenciais são salvas de forma segura no cofre do sistema.
+
+## Observações
+
+- O app suporta URLs de Pull Request do GitHub e Merge Request do GitLab/GitLab.
+- Se ocorrerem erros de rede ou de API, verifique as credenciais e a conectividade.

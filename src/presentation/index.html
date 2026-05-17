@@ -23,26 +23,6 @@
             </select>
         </div>
         
-        <div class="filters">
-            Severidade:
-                <select id="filterSeverity">
-                    <option value="ALL">Todas</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="LOW">LOW</option>
-                </select>
-
-            Tipo:
-                <select id="filterType">
-                    <option value="ALL">Todos</option>
-                    <option value="BUG">BUG</option>
-                    <option value="PERFORMANCE">PERFORMANCE</option>
-                    <option value="SECURITY">SECURITY</option>
-                    <option value="STYLE">STYLE</option>
-                </select>
-        </div>
-
-
         <div id="status"></div>
 
         <pre id="result"></pre>
@@ -57,20 +37,13 @@
                 window.api.openConfig();
             });
             
-            document.getElementById("filterSeverity").addEventListener("change", () => {
-                if (lastResult) renderResult(lastResult);
-            });
-
-            document.getElementById("filterType").addEventListener("change", () => {
-                if (lastResult) renderResult(lastResult);
-            });
-
-            
+            let analysisUrl = '';
             async function analyze() {
                 const url = document.getElementById('url').value.trim(); 
                 const language = document.getElementById('languageSelect').value;
                 const status = document.getElementById('status');
                 const resultEl = document.getElementById('result');
+                analysisUrl = url;
 
                 resultEl.innerText = "";
 
@@ -136,14 +109,20 @@
 
             let lastResult = null;
 
+            function buildComment(file, issues) {
+                if (!issues || issues.length === 0) {
+                    return `Comentários de revisão para ${file}: nenhuma issue encontrada.`;
+                }
+
+                const lines = issues.map(issue => `- ${issue.message} (${issue.file}:${issue.line ?? '-'})`);
+                return `### Comentários do Code Review para ${file}\n\n${lines.join('\n')}\n\n*Comentário gerado automaticamente pelo Code Review AI.*`;
+            }
+
             function renderResult(result) {
                 lastResult = result;
 
                 const container = document.getElementById('result');
                 container.innerHTML = "";
-
-                const severityFilter = document.getElementById('filterSeverity').value;
-                const typeFilter = document.getElementById('filterType').value;
 
                 const grouped = groupByFile(result);
 
@@ -165,12 +144,52 @@
                     fileName.className = "file-name";
                     fileName.textContent = "📄 " + file;
                     
+                    const titleRight = document.createElement("div");
+                    titleRight.className = "card-title-right";
+
                     const fileMeta = document.createElement("span");
                     fileMeta.className = "file-meta";
                     fileMeta.textContent = data.issues.length + " problemas • " + data.suggestions.length + " sugestões";
+
+                    const commentButton = document.createElement("button");
+                    commentButton.type = 'button';
+                    commentButton.className = 'comment-button';
+                    commentButton.textContent = 'Comentar no merge';
+                    commentButton.addEventListener('click', async (event) => {
+                        event.stopPropagation();
+                        const status = document.getElementById('status');
+
+                        if (!analysisUrl) {
+                            status.innerText = '❌ URL de análise não definida.';
+                            return;
+                        }
+
+                        const comment = buildComment(file, data.issues);
+                        commentButton.disabled = true;
+                        commentButton.textContent = 'Enviando...';
+                        status.innerText = '⏳ Enviando comentário para o merge...';
+
+                        try {
+                            await window.api.postReviewComment({ url: analysisUrl, comment });
+                            status.innerText = `✅ Comentário enviado para ${file}`;
+                            commentButton.textContent = 'Comentado!';
+                        } catch (err) {
+                            status.innerText = `❌ Falha ao comentar: ${err?.message ?? err}`;
+                            console.error('Erro ao comentar no merge:', err);
+                            commentButton.textContent = 'Tentar novamente';
+                        } finally {
+                            setTimeout(() => {
+                                commentButton.disabled = false;
+                                commentButton.textContent = 'Comentar no merge';
+                            }, 3000);
+                        }
+                    });
                     
+                    titleRight.appendChild(fileMeta);
+                    titleRight.appendChild(commentButton);
+
                     title.appendChild(fileName);
-                    title.appendChild(fileMeta);
+                    title.appendChild(titleRight);
 
                     title.addEventListener("click", () => {
                         content.classList.toggle("hidden");
@@ -186,12 +205,7 @@
                     content.appendChild(issueHeader);
 
                     // Issues
-                    data.issues
-                        .filter(i =>
-                            (severityFilter === "ALL" || i.severity === severityFilter) &&
-                            (typeFilter === "ALL" || i.type === typeFilter)
-                        )
-                        .forEach(i => {
+                    data.issues.forEach(i => {
 
                             const item = document.createElement("div");
                             item.className = `issue ${i.severity}`;

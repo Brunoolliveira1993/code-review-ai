@@ -80,6 +80,31 @@ button:hover {
     color: #94a3b8;
 }
 
+.card-title-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.comment-button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    background: #14b8a6;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.comment-button:hover {
+    background: #0f766e;
+}
+
+.comment-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* SECTIONS */
 
 .section-title {

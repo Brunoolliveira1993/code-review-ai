@@ -2,17 +2,31 @@
   "name": "code-review-ai",
   "version": "1.0.0",
   "description": "",
-  "main": "src/main/main.js",
+  "main": "dist/main/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "npm run build && electron .",
+    "build": "tsc && node scripts/copyPresentation.js",
+    "lint": "eslint \"src/**/*.{js,ts}\"",
+    "format": "prettier --write \"src/**/*.{js,ts,json,md}\"",
+    "test": "echo \"No tests configured yet. Use vitest or jest to add coverage.\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^17.4.2",
-    "electron": "^41.3.0",
+    "electron": "^25.3.0",
     "keytar": "^7.9.0",
-    "node-fetch": "^3.3.2"
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@types/node": "^20.14.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0"
   }
 }
